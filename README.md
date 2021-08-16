@@ -2,89 +2,73 @@
 學號：NE6101115 
 姓名：崔元淇
 ## 作業前置
-### * fna檔讀取
-1. 耗時
-
-![](https://i.imgur.com/Gk6pHx3.png)
-
-2. 記憶體消耗
-
-![](https://i.imgur.com/PvNR8uD.png)
-
-
 ### * 資料統計(計算 genomic 數量與種類)
 ```
-dict_gen = {'a' : S.count('a') , 'c' : S.count('c') , 't' : S.count('t') , 'g': S.count('g') }
+order_0_dict = {'a' : S.count('a'), 'c' : S.count('c'), 't' : S.count('t'), 'g' : S.count('g')}
+
+for i in range(100000):
+    if i > 0:
+        order_1_dict[S[i-1] + S[i]] += 1
+    if i > 1:
+        order_2_dict[S[i-2] + S[i-1] + S[i]] += 1
 ```
 ## 第一題
 ### 方法
-* order 0 : 各 genomic 數量 * log( genomic 在此序列之比例) 相加
-* order 1, 2 : 建立transition matrix
+* order 0 : 
+
+    意義 ： genomic獨立出現在此序列機率
+    
+    方法 ： 各 genomic 數量 * log ( genomic 在此序列之比例) 相加
+* order 1, 2 : 
+
+    意義 ： 考慮每個genomic及前1~2個genomic出現在此序列的機率
+    
+    方法 ： 建立transition matrix
 * order 1 ：
 
-![](https://i.imgur.com/twvDtP6.png)
-```
-total = log(gen_prob[S[0]], 2)
-    for i in range(len(S)):
-        if i > 0:
-            total += log(order_1_TM[S[i-1]][S[i]], 2)
-```
-// gen_prob 為單一基因出現的機率
+![](https://i.imgur.com/lYoQWy0.png)
+
+
+
 * order 2 ：
 
-![](https://i.imgur.com/iZ69eKM.png)
-```
-    total = 0
-    for i in range(len(S)):
-        if i == 0 or i == 1:
-            total += log(gen_prob[S[i]], 2)
-        else:
-            total += log(order_2_TM['{}'.format(S[i - 2] + S[i - 1])][S[i]], 2)
-```
-### 結果 (含時間與記憶體消耗)
-* 建 transition matrix 消耗時間與記憶體：
+![](https://i.imgur.com/8XKzkqo.png)
 
-![](https://i.imgur.com/lYsymFg.png)
 
-![](https://i.imgur.com/Nhfnzys.png)
+### 結果
 * 各 order 結果：
 
-![](https://i.imgur.com/PBj9nil.png)
-![](https://i.imgur.com/YK0wy76.png)
+![](https://i.imgur.com/Xxdcsad.png)
+
 
 
 ## 第二題
 ### 方法
 * from hmmlearn import hmm 使用 MultinomialHMM
 * 調整參數以達到較好結果 (n_iter, n_states)
-### 結果 (含時間與記憶體消耗)
+### 結果 
 ```
-s = []
+s = s2 = []
 for i in S:
     for j in range(len(dict_gen)):
         if i == [k for k in dict_gen.keys()][j]:
             s.append(j)
 s= np.array(s).reshape((-1, 1))
 
-n_states = 7
+for i in S2:
+    for j in range(len(order_0_dict)):
+        if i == [k for k in order_0_dict.keys()][j]:
+            s2.append(j)
+s2= np.array(s2).reshape((-1, 1))
+
+n_states = 3
 model = hmm.MultinomialHMM(n_components = n_states, n_iter = 1000, tol = 0.01)
 model.fit(s)
-print('prob(log) :', model.score(s) / log(2))
+print('prob(100001~200000) :', model.score(s) / log(2))
+print('prob(200001~302400) :', model.score(s2) / log(2))
 ```
-![](https://i.imgur.com/clUnCx4.png)
-![](https://i.imgur.com/8iC3ViI.png)
-* 最後選擇狀態數量為7，訓練1000次的模型
-1.     在訓練過程中狀態數量低於 7 的準確度雖然仍比 ( plain ) Markov model 要好，但 7 是其中最高的，至於高於 7 的情況，準確度雖然有較 7 高一點，但訓練時間過長，整體效率上沒有這麼好。
-2.     在訓練不到1000次的模型中，可能因為訓練次數不足導致準確度不高，而高於1000次的模型中則漸漸走向過擬合導致準確度開始走下坡。
-* 利用訓練好的狀態，生成隨機序列：
-```
-seq, output_state = model.sample(n_samples = 100000, random_state=None)
-output_seq = ''
-for i in seq.reshape((len(seq))):
-    output_seq += [j for j in dict_gen.keys()][i]
-print('output sequence length :', len(output_seq))
-```
-結果過長因此用長度帶過
 
-![](https://i.imgur.com/4L4Fak3.png)
-![](https://i.imgur.com/84dJJaY.png)
+* 利用訓練好的狀態，判斷相同資料集 [ 200001 ~ 302400 ] 的資料：
+
+![](https://i.imgur.com/UNBXBbG.png)
+
