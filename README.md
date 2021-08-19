@@ -70,5 +70,6 @@ print('prob(200001~302400) :', model.score(s2) / log(2))
 
 * 利用訓練好的狀態，判斷相同資料集 [ 200001 ~ 302400 ] 的資料：
 
-![](https://i.imgur.com/UNBXBbG.png)
+![](https://i.imgur.com/ffGRNtv.png)
+
 
